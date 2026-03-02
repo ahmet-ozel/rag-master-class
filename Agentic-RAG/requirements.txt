@@ -1,0 +1,6 @@
+# Agentic RAG Demo dependencies
+openai>=1.10.0
+chromadb>=0.4.22
+sentence-transformers>=2.2.0
+python-dotenv>=1.0.0
+numpy>=1.24.0

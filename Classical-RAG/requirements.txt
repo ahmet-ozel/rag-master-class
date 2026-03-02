@@ -1,0 +1,24 @@
+# Core dependencies for Classical RAG Document Chunking & Embedding
+streamlit>=1.28.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# ML/AI dependencies
+torch>=2.0.0
+transformers>=4.30.0
+sentence-transformers>=2.2.0
+
+# Document processing
+pdfplumber>=0.9.0
+python-docx>=0.8.11
+openpyxl>=3.1.0
+xlrd>=2.0.1
+
+# Optional: ZIP encryption support
+pyzipper>=0.3.6
+
+# RAG Pipeline dependencies
+chromadb>=0.4.22
+openai>=1.10.0
+ollama>=0.1.0
+python-dotenv>=1.0.0

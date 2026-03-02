@@ -1,0 +1,54 @@
+{
+    "qa_pairs": [
+        {
+            "question": "RAG nedir?",
+            "ground_truth": "RAG (Retrieval-Augmented Generation), büyük dil modellerinin bilgi üretme kapasitesini harici bilgi kaynaklarıyla zenginleştiren bir mimari yaklaşımdır. Geleneksel LLM'ler yalnızca eğitim verilerindeki bilgiyle sınırlıyken, RAG sistemi gerçek zamanlı olarak ilgili belgeleri bulup bu bilgiyi modelin bağlamına ekler.",
+            "context_files": ["sample.txt"]
+        },
+        {
+            "question": "RAG sisteminin temel bileşenleri nelerdir?",
+            "ground_truth": "Bir RAG sistemi üç temel bileşenden oluşur: Retrieval (bilgi getirme - vektör veritabanında benzerlik araması), Augmentation (bağlam zenginleştirme - bulunan chunk'ların prompt'a eklenmesi) ve Generation (cevap üretimi - LLM ile doğal dilde yanıt oluşturma).",
+            "context_files": ["sample.txt"]
+        },
+        {
+            "question": "Embedding nedir ve nasıl çalışır?",
+            "ground_truth": "Embedding, metin parçalarını yüksek boyutlu sayısal vektörlere dönüştürme işlemidir. Bu vektörler metnin anlamsal içeriğini yakalayarak benzer kavramların vektör uzayında birbirine yakın konumlanmasını sağlar.",
+            "context_files": ["sample.txt", "sample.csv"]
+        },
+        {
+            "question": "ChromaDB'nin avantajları nelerdir?",
+            "ground_truth": "ChromaDB Python-native, sıfır yapılandırma gerektiren hafif bir vektör veritabanıdır. Yerel geliştirme ve prototipleme için idealdir. Kalıcı depolama ve kosinüs benzerliği araması destekler.",
+            "context_files": ["sample.csv"]
+        },
+        {
+            "question": "Chunking stratejileri nelerdir?",
+            "ground_truth": "Yaygın chunking yöntemleri: sabit boyutlu chunking, cümle bazlı chunking, örtüşmeli (overlapping) chunking, semantik chunking ve tablo bazlı (row-based) chunking. Önerilen chunk boyutu 256-1024 token arasıdır ve overlap oranı chunk boyutunun %10-20'si olarak ayarlanır.",
+            "context_files": ["sample.txt", "sample.csv"]
+        },
+        {
+            "question": "Classical RAG ile Agentic RAG arasındaki fark nedir?",
+            "ground_truth": "Classical RAG sabit bir pipeline izler: sorgu, arama, bağlam ekleme, cevap üretme. Her adım önceden tanımlanmıştır. Agentic RAG ise bir ajan döngüsü kullanır; LLM soruyu analiz eder ve hangi aracı kullanacağına otonom olarak karar verir, birden fazla kaynağı birleştirebilir.",
+            "context_files": ["sample.txt", "sample.csv"]
+        },
+        {
+            "question": "Faithfulness metriği neyi ölçer?",
+            "ground_truth": "Faithfulness, üretilen cevabın getirilen bağlama ne kadar sadık olduğunu ölçer. Yüksek faithfulness skoru, cevabın bağlamdaki bilgilere dayandığı ve uydurma bilgi içermediği anlamına gelir.",
+            "context_files": ["sample.txt", "sample.csv"]
+        },
+        {
+            "question": "Reranking nedir ve neden önemlidir?",
+            "ground_truth": "Reranking, ilk arama sonuçlarını cross-encoder gibi daha sofistike bir model ile yeniden sıralama işlemidir. İlk arama hızlı ama kaba bir sıralama yaparken, reranker daha yavaş ama daha doğru bir sıralama sağlar. Alakasız sonuçları eleyerek LLM'e gönderilen bağlamı iyileştirir.",
+            "context_files": ["sample.txt", "sample.csv"]
+        },
+        {
+            "question": "LLM halüsinasyonu nedir ve RAG bunu nasıl azaltır?",
+            "ground_truth": "LLM halüsinasyonu, modelin eğitim verisinde olmayan veya yanlış bilgileri gerçekmiş gibi üretmesidir. RAG bu sorunu azaltır çünkü model cevap üretirken somut kaynaklara dayanır, böylece daha güvenilir ve doğrulanabilir yanıtlar üretir.",
+            "context_files": ["sample.txt", "sample.csv"]
+        },
+        {
+            "question": "HyDE tekniği nasıl çalışır?",
+            "ground_truth": "HyDE (Hypothetical Document Embeddings), LLM'den varsayımsal bir cevap üretmesini ister ve bu cevabın embedding'i ile vektör araması yapar. Bu sayede sorgu ile belge arasındaki anlamsal boşluk azalır ve daha alakalı sonuçlar bulunur.",
+            "context_files": ["sample.txt", "sample.csv"]
+        }
+    ]
+}

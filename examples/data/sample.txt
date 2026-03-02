@@ -1,0 +1,242 @@
+================================================================================
+  RAG (Retrieval-Augmented Generation) – Kapsamlı Teknik Doküman
+  Comprehensive Technical Document on RAG Architecture
+================================================================================
+
+BÖLÜM 1 / SECTION 1: RAG Nedir? / What is RAG?
+--------------------------------------------------------------------------------
+
+Retrieval-Augmented Generation (RAG), büyük dil modellerinin (LLM) bilgi
+üretme kapasitesini harici bilgi kaynaklarıyla zenginleştiren bir mimari
+yaklaşımdır. Geleneksel LLM'ler yalnızca eğitim verilerindeki bilgiyle
+sınırlıyken, RAG sistemi gerçek zamanlı olarak ilgili belgeleri bulup bu
+bilgiyi modelin bağlamına ekler.
+
+Retrieval-Augmented Generation (RAG) is an architectural approach that enhances
+the knowledge generation capacity of large language models (LLMs) by enriching
+them with external knowledge sources. While traditional LLMs are limited to
+information in their training data, a RAG system retrieves relevant documents
+in real-time and adds this information to the model's context.
+
+RAG'ın temel motivasyonu, LLM'lerin "halüsinasyon" (hallucination) sorununu
+azaltmaktır. Model, cevap üretirken somut kaynaklara dayandığı için daha
+güvenilir ve doğrulanabilir yanıtlar üretir.
+
+The primary motivation behind RAG is to reduce the "hallucination" problem of
+LLMs. Since the model relies on concrete sources when generating answers, it
+produces more reliable and verifiable responses.
+
+BÖLÜM 2 / SECTION 2: RAG Mimarisi / RAG Architecture
+--------------------------------------------------------------------------------
+
+Bir RAG sistemi üç temel bileşenden oluşur:
+
+A RAG system consists of three fundamental components:
+
+1. Retrieval (Bilgi Getirme / Information Retrieval):
+   Kullanıcı sorgusuna en alakalı belge parçalarını (chunk) bulmak için
+   vektör veritabanında benzerlik araması yapılır. Bu adımda sorgu metni
+   bir embedding vektörüne dönüştürülür ve veritabanındaki vektörlerle
+   kosinüs benzerliği hesaplanır.
+
+   A similarity search is performed in a vector database to find the most
+   relevant document chunks for the user query. In this step, the query text
+   is converted into an embedding vector and cosine similarity is calculated
+   with vectors in the database.
+
+2. Augmentation (Bağlam Zenginleştirme / Context Augmentation):
+   Bulunan alakalı chunk'lar, LLM'e gönderilecek prompt'a bağlam olarak
+   eklenir. Bu sayede model, eğitim verisinde olmayan güncel ve spesifik
+   bilgilere erişebilir.
+
+   The relevant chunks found are added as context to the prompt sent to the
+   LLM. This allows the model to access current and specific information
+   that may not be in its training data.
+
+3. Generation (Cevap Üretimi / Answer Generation):
+   LLM, zenginleştirilmiş bağlamı kullanarak kullanıcının sorusuna doğal
+   dilde bir cevap üretir. Cevap, getirilen kaynaklara dayandığı için
+   daha doğru ve güvenilir olur.
+
+   The LLM generates a natural language answer to the user's question using
+   the enriched context. The answer is more accurate and reliable because
+   it is based on retrieved sources.
+
+BÖLÜM 3 / SECTION 3: Embedding ve Vektör Veritabanları
+                       Embeddings and Vector Databases
+--------------------------------------------------------------------------------
+
+Embedding, metin parçalarını yüksek boyutlu sayısal vektörlere dönüştürme
+işlemidir. Bu vektörler, metnin anlamsal içeriğini yakalayarak benzer
+kavramların vektör uzayında birbirine yakın konumlanmasını sağlar.
+
+Embedding is the process of converting text fragments into high-dimensional
+numerical vectors. These vectors capture the semantic content of the text,
+ensuring that similar concepts are positioned close to each other in the
+vector space.
+
+Popüler embedding modelleri / Popular embedding models:
+- sentence-transformers/all-MiniLM-L6-v2 (384 boyut / dimensions)
+- text-embedding-ada-002 (OpenAI, 1536 boyut / dimensions)
+- BAAI/bge-large-en-v1.5 (1024 boyut / dimensions)
+- intfloat/multilingual-e5-large (1024 boyut / dimensions)
+
+Vektör veritabanları, bu embedding vektörlerini depolayıp hızlı benzerlik
+araması yapmak için optimize edilmiş özel veritabanlarıdır.
+
+Vector databases are specialized databases optimized for storing these
+embedding vectors and performing fast similarity searches.
+
+Yaygın vektör veritabanları / Common vector databases:
+- ChromaDB: Python-native, sıfır yapılandırma, hafif (lightweight, zero-config)
+- Pinecone: Bulut tabanlı, yönetilen servis (cloud-based, managed service)
+- Weaviate: Açık kaynak, hibrit arama desteği (open-source, hybrid search)
+- Qdrant: Yüksek performanslı, Rust tabanlı (high-performance, Rust-based)
+- Milvus: Büyük ölçekli dağıtık sistem (large-scale distributed system)
+- FAISS: Facebook AI tarafından geliştirilen kütüphane (library by Facebook AI)
+
+BÖLÜM 4 / SECTION 4: Chunking Stratejileri / Chunking Strategies
+--------------------------------------------------------------------------------
+
+Belgeleri vektör veritabanına kaydetmeden önce küçük parçalara (chunk)
+bölmek gerekir. Chunking stratejisi, RAG sisteminin performansını doğrudan
+etkiler.
+
+Before storing documents in a vector database, they need to be split into
+small pieces (chunks). The chunking strategy directly affects the performance
+of the RAG system.
+
+Yaygın chunking yöntemleri / Common chunking methods:
+
+a) Sabit Boyutlu Chunking (Fixed-Size Chunking):
+   Metni belirli karakter veya token sayısına göre böler. Basit ama anlam
+   bütünlüğünü korumayabilir.
+   Splits text by a fixed number of characters or tokens. Simple but may
+   not preserve semantic coherence.
+
+b) Cümle Bazlı Chunking (Sentence-Based Chunking):
+   Cümle sınırlarına göre böler. Anlam bütünlüğünü daha iyi korur.
+   Splits at sentence boundaries. Better preserves semantic coherence.
+
+c) Örtüşmeli Chunking (Overlapping Chunking):
+   Chunk'lar arasında belirli bir örtüşme (overlap) bırakır. Bağlam
+   kaybını azaltır.
+   Leaves a certain overlap between chunks. Reduces context loss.
+
+d) Semantik Chunking (Semantic Chunking):
+   Embedding benzerliğine göre anlamsal olarak tutarlı bölümler oluşturur.
+   Creates semantically coherent sections based on embedding similarity.
+
+e) Tablo Bazlı Chunking (Table-Based / Row-Based Chunking):
+   CSV ve Excel gibi tablo verilerinde her satırı veya satır grubunu ayrı
+   chunk olarak işler.
+   Processes each row or group of rows as separate chunks in tabular data
+   like CSV and Excel files.
+
+Önerilen chunk boyutu genellikle 256-1024 token arasındadır. Overlap oranı
+ise chunk boyutunun %10-20'si olarak ayarlanır.
+
+The recommended chunk size is typically between 256-1024 tokens. The overlap
+ratio is set to 10-20% of the chunk size.
+
+BÖLÜM 5 / SECTION 5: Classical RAG vs Agentic RAG
+--------------------------------------------------------------------------------
+
+Classical RAG, sabit bir pipeline izler: sorgu → arama → bağlam ekleme →
+cevap üretme. Her adım önceden tanımlanmıştır ve sistem otonom karar vermez.
+
+Classical RAG follows a fixed pipeline: query → search → context augmentation →
+answer generation. Each step is predefined and the system does not make
+autonomous decisions.
+
+Agentic RAG ise bir ajan (agent) döngüsü kullanır. LLM, soruyu analiz eder
+ve hangi aracı (tool) kullanacağına otonom olarak karar verir. Örneğin:
+- Yerel veritabanında arama yapabilir
+- Web'de güncel bilgi arayabilir
+- Birden fazla kaynağı birleştirebilir
+- Sonuçları değerlendirip ek arama yapabilir
+
+Agentic RAG uses an agent loop. The LLM analyzes the question and autonomously
+decides which tool to use. For example:
+- It can search in the local database
+- It can search for current information on the web
+- It can combine multiple sources
+- It can evaluate results and perform additional searches
+
+Agentic RAG'ın avantajları / Advantages of Agentic RAG:
+- Daha esnek ve adaptif (more flexible and adaptive)
+- Çoklu kaynak kullanımı (multi-source usage)
+- Otonom karar verme (autonomous decision-making)
+- Karmaşık sorularda daha iyi performans (better performance on complex queries)
+
+Classical RAG'ın avantajları / Advantages of Classical RAG:
+- Daha basit ve öngörülebilir (simpler and more predictable)
+- Daha düşük gecikme süresi (lower latency)
+- Daha az kaynak tüketimi (less resource consumption)
+- Hata ayıklama kolaylığı (easier debugging)
+
+BÖLÜM 6 / SECTION 6: Değerlendirme Metrikleri / Evaluation Metrics
+--------------------------------------------------------------------------------
+
+RAG sistemlerinin kalitesini ölçmek için çeşitli metrikler kullanılır:
+
+Various metrics are used to measure the quality of RAG systems:
+
+1. Faithfulness (Sadakat):
+   Üretilen cevabın, getirilen bağlama ne kadar sadık olduğunu ölçer.
+   Yüksek faithfulness, cevabın bağlamdaki bilgilere dayandığı anlamına gelir.
+   Measures how faithful the generated answer is to the retrieved context.
+   High faithfulness means the answer is based on information in the context.
+
+2. Answer Relevancy (Cevap Alakası):
+   Üretilen cevabın, sorulan soruyla ne kadar alakalı olduğunu ölçer.
+   Measures how relevant the generated answer is to the asked question.
+
+3. Context Precision (Bağlam Hassasiyeti):
+   Getirilen chunk'ların soruyla ne kadar alakalı olduğunu ölçer. Yüksek
+   precision, gereksiz chunk'ların getirilmediği anlamına gelir.
+   Measures how relevant the retrieved chunks are to the question. High
+   precision means irrelevant chunks are not retrieved.
+
+4. Context Recall (Bağlam Duyarlılığı):
+   Soruyu cevaplamak için gerekli tüm bilgilerin getirilip getirilmediğini
+   ölçer.
+   Measures whether all information needed to answer the question has been
+   retrieved.
+
+BÖLÜM 7 / SECTION 7: Reranking ve İleri Teknikler / Reranking and Advanced Techniques
+--------------------------------------------------------------------------------
+
+Reranking, ilk arama sonuçlarını daha sofistike bir model ile yeniden
+sıralama işlemidir. İlk arama (bi-encoder) hızlı ama kaba bir sıralama
+yaparken, reranker (cross-encoder) daha yavaş ama daha doğru bir sıralama
+sağlar.
+
+Reranking is the process of re-ordering initial search results with a more
+sophisticated model. While the initial search (bi-encoder) provides fast but
+rough ranking, the reranker (cross-encoder) provides slower but more accurate
+ranking.
+
+Popüler reranker modelleri / Popular reranker models:
+- BAAI/bge-reranker-v2-m3
+- Cohere Rerank 3.5
+- cross-encoder/ms-marco-MiniLM-L-12-v2
+
+Diğer ileri teknikler / Other advanced techniques:
+- Hybrid Search: Vektör araması + anahtar kelime araması birleşimi
+  (Combination of vector search + keyword search)
+- Query Expansion: Sorguyu genişleterek daha fazla alakalı sonuç bulma
+  (Expanding the query to find more relevant results)
+- HyDE (Hypothetical Document Embeddings): Varsayımsal cevap üretip
+  onun embedding'i ile arama yapma
+  (Generating a hypothetical answer and searching with its embedding)
+- Multi-Query RAG: Tek sorudan birden fazla alt sorgu türetme
+  (Deriving multiple sub-queries from a single question)
+
+================================================================================
+  Bu doküman, RAG portföy deposundaki demo pipeline'ları test etmek için
+  hazırlanmış örnek veri dosyasıdır.
+
+  This document is a sample data file prepared for testing the demo pipelines
+  in the RAG portfolio repository.
+================================================================================
