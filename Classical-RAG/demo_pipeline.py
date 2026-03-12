@@ -388,26 +388,39 @@ class FAISSVectorStore:
         vectors = np.array(embeddings, dtype=np.float32)
         dim = vectors.shape[1]
 
-        if self._index is None:
-            self._index = self._faiss.IndexFlatIP(dim)  # inner product (cosine with normalized vectors)
-
         # Normalize for cosine similarity
         norms = np.linalg.norm(vectors, axis=1, keepdims=True)
         norms[norms == 0] = 1
         vectors = vectors / norms
 
-        # Remove existing ids (simple upsert)
-        for doc_id in ids:
-            if doc_id in self._ids:
-                idx = self._ids.index(doc_id)
-                self._ids.pop(idx)
-                self._documents.pop(idx)
-                self._metadatas.pop(idx)
+        # Build a set of incoming ids for fast lookup
+        incoming_ids = set(ids)
+
+        # Collect existing entries that are NOT being replaced
+        keep_ids: List[str] = []
+        keep_docs: List[str] = []
+        keep_metas: List[Dict] = []
+        keep_vectors: List[np.ndarray] = []
+
+        if self._index is not None and self._index.ntotal > 0:
+            for i, doc_id in enumerate(self._ids):
+                if doc_id not in incoming_ids:
+                    keep_ids.append(doc_id)
+                    keep_docs.append(self._documents[i])
+                    keep_metas.append(self._metadatas[i])
+                    keep_vectors.append(self._index.reconstruct(i))
+
+        # Rebuild index from scratch with kept + new entries
+        self._index = self._faiss.IndexFlatIP(dim)
+
+        if keep_vectors:
+            self._index.add(np.vstack(keep_vectors))
 
         self._index.add(vectors)
-        self._ids.extend(ids)
-        self._documents.extend(documents)
-        self._metadatas.extend(metadatas)
+
+        self._ids = keep_ids + list(ids)
+        self._documents = keep_docs + list(documents)
+        self._metadatas = keep_metas + list(metadatas)
         self._save()
 
     def query(self, query_embedding: List[float], top_k: int) -> List[ChunkResult]:

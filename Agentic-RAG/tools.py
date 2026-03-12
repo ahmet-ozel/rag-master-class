@@ -242,17 +242,39 @@ class VectorSearchTool:
 
     def _faiss_ingest(self, ids, embeddings, documents, metadatas):
         vectors = np.array(embeddings, dtype=np.float32)
+        dim = vectors.shape[1]
         norms = np.linalg.norm(vectors, axis=1, keepdims=True)
         norms[norms == 0] = 1
         vectors = vectors / norms
 
-        if self._faiss_index is None:
-            self._faiss_index = self._faiss.IndexFlatIP(vectors.shape[1])
+        # Build set of incoming ids for fast lookup
+        incoming_ids = set(ids)
+
+        # Collect existing entries that are NOT being replaced
+        keep_ids: List[str] = []
+        keep_docs: List[str] = []
+        keep_metas: List[Dict] = []
+        keep_vectors: List[np.ndarray] = []
+
+        if self._faiss_index is not None and self._faiss_index.ntotal > 0:
+            for i, doc_id in enumerate(self._faiss_ids):
+                if doc_id not in incoming_ids:
+                    keep_ids.append(doc_id)
+                    keep_docs.append(self._faiss_docs[i])
+                    keep_metas.append(self._faiss_metas[i])
+                    keep_vectors.append(self._faiss_index.reconstruct(i))
+
+        # Rebuild index from scratch with kept + new entries
+        self._faiss_index = self._faiss.IndexFlatIP(dim)
+
+        if keep_vectors:
+            self._faiss_index.add(np.vstack(keep_vectors))
 
         self._faiss_index.add(vectors)
-        self._faiss_ids.extend(ids)
-        self._faiss_docs.extend(documents)
-        self._faiss_metas.extend(metadatas)
+
+        self._faiss_ids = keep_ids + list(ids)
+        self._faiss_docs = keep_docs + list(documents)
+        self._faiss_metas = keep_metas + list(metadatas)
 
         os.makedirs(self._faiss_dir, exist_ok=True)
         self._faiss.write_index(self._faiss_index, os.path.join(self._faiss_dir, f"{self._collection_name}.index"))
