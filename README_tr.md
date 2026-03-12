@@ -191,7 +191,10 @@ rag-master-class/
 ├── docker-compose.yml                 # ChromaDB + Ollama servisleri
 ├── Makefile                           # Kısayol komutları (setup, demo, evaluate, clean)
 ├── .env.example                       # Ortam değişkenleri şablonu
-└── .gitignore                         # Git hariç tutma desenleri
+├── .gitignore                         # Git hariç tutma desenleri
+├── CONTRIBUTING.md                    # Katkıda bulunma rehberi (EN)
+├── CONTRIBUTING_tr.md                 # Katkıda bulunma rehberi (TR)
+└── LICENSE                            # MIT Lisansı
 ```
 
 ## 🔗 Hızlı Bağlantılar
@@ -202,6 +205,8 @@ rag-master-class/
 | [Agentic-RAG/](./Agentic-RAG/) | Otonom araç seçimi ve ajan döngüsü ile Agentic RAG |
 | [examples/data/](./examples/data/) | Demo'ları test etmek için örnek veri dosyaları |
 | [evaluation/](./evaluation/) | Faithfulness, Relevancy ve Precision metrikleri ile RAG kalite değerlendirmesi |
+| [CONTRIBUTING_tr.md](./CONTRIBUTING_tr.md) | Katkıda bulunma rehberi |
+| [LICENSE](./LICENSE) | MIT Lisansı |
 
 ---
 

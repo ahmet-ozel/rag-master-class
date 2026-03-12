@@ -3,10 +3,14 @@
 .DEFAULT_GOAL := help
 
 help: ## Show available commands
-	@echo "RAG Portfolio - Available Commands"
-	@echo "=================================="
+	@echo "RAG Master Class - Available Commands"
+	@echo "======================================"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  make %-18s %s\n", $$1, $$2}'
+	@echo ""
+	@echo "Environment variables (set in .env):"
+	@echo "  LLM_PROVIDER    openai | gemini | claude | ollama | vllm"
+	@echo "  VECTOR_STORE    chroma | faiss"
 	@echo ""
 
 setup: ## Install Python dependencies and start Docker services
@@ -15,10 +19,10 @@ setup: ## Install Python dependencies and start Docker services
 	@if [ -f evaluation/requirements.txt ]; then pip install -r evaluation/requirements.txt; fi
 	docker compose up -d
 
-demo-classical: ## Run Classical RAG demo pipeline
+demo-classical: ## Run Classical RAG demo (use LLM_PROVIDER and VECTOR_STORE env vars)
 	python Classical-RAG/demo_pipeline.py
 
-demo-agentic: ## Run Agentic RAG demo pipeline
+demo-agentic: ## Run Agentic RAG demo (use LLM_PROVIDER env var)
 	python Agentic-RAG/agent_demo.py
 
 evaluate: ## Run RAG evaluation script
@@ -27,9 +31,8 @@ evaluate: ## Run RAG evaluation script
 test: ## Run pytest tests
 	pytest tests/ -v
 
-clean: ## Remove temporary files and caches
+clean: ## Remove temporary files, caches, and vector stores
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
-	rm -rf .pytest_cache
-	rm -rf chroma_db/
-	@echo "Cleaned up temporary files."
+	rm -rf .pytest_cache chroma_db/ faiss_index/
+	@echo "Cleaned up."

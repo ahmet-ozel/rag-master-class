@@ -191,7 +191,10 @@ rag-master-class/
 ├── docker-compose.yml                 # ChromaDB + Ollama services
 ├── Makefile                           # Shortcut commands (setup, demo, evaluate, clean)
 ├── .env.example                       # Environment variables template
-└── .gitignore                         # Git ignore patterns
+├── .gitignore                         # Git ignore patterns
+├── CONTRIBUTING.md                    # Contribution guidelines (EN)
+├── CONTRIBUTING_tr.md                 # Contribution guidelines (TR)
+└── LICENSE                            # MIT License
 ```
 
 ## 🔗 Quick Links
@@ -202,6 +205,8 @@ rag-master-class/
 | [Agentic-RAG/](./Agentic-RAG/) | Agentic RAG with autonomous tool selection and agent loop |
 | [examples/data/](./examples/data/) | Sample data files for testing the demos |
 | [evaluation/](./evaluation/) | RAG quality evaluation with Faithfulness, Relevancy, and Precision metrics |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution guidelines |
+| [LICENSE](./LICENSE) | MIT License |
 
 ---
 

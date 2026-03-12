@@ -370,9 +370,15 @@ def main() -> None:
     )
     parser.add_argument(
         "--provider",
-        choices=["openai", "ollama"],
-        default="openai",
+        choices=["openai", "gemini", "claude", "ollama", "vllm"],
+        default=os.getenv("LLM_PROVIDER", "openai"),
         help="LLM provider (default: openai)",
+    )
+    parser.add_argument(
+        "--vector-store",
+        choices=["chroma", "faiss"],
+        default=os.getenv("VECTOR_STORE", "chroma"),
+        help="Vector store (default: chroma)",
     )
     parser.add_argument(
         "--model",
@@ -406,11 +412,12 @@ def main() -> None:
     print("=" * 60)
     print("  RAG Pipeline Evaluation")
     print("=" * 60)
-    print(f"  Provider  : {args.provider}")
-    print(f"  Model     : {args.model or 'default'}")
-    print(f"  QA Pairs  : {args.qa_pairs}")
-    print(f"  Data Dir  : {args.data_dir}")
-    print(f"  Output    : {args.output}")
+    print(f"  Provider     : {args.provider}")
+    print(f"  Model        : {args.model or 'default'}")
+    print(f"  Vector Store : {args.vector_store}")
+    print(f"  QA Pairs     : {args.qa_pairs}")
+    print(f"  Data Dir     : {args.data_dir}")
+    print(f"  Output       : {args.output}")
     print("=" * 60)
 
     # 1. Initialize pipeline
@@ -418,6 +425,7 @@ def main() -> None:
     pipeline = ClassicalRAGPipeline(
         llm_provider=args.provider,
         model_name=args.model,
+        vector_store=args.vector_store,
     )
 
     # 2. Ingest sample data

@@ -1,13 +1,14 @@
 """
 Agentic RAG Tool Definitions
 =============================
-OpenAI function calling icin arac tanimlari.
-VectorSearchTool: ChromaDB uzerinde benzerlik aramasi.
-WebSearchTool: Basit web arama simulasyonu (demo amacli).
+OpenAI function calling için araç tanımları.
+VectorSearchTool: ChromaDB veya FAISS üzerinde benzerlik araması.
+WebSearchTool: Web arama simülasyonu (demo amaçlı).
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
@@ -15,11 +16,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-logger = logging.getLogger("agentic_tools")
+import numpy as np
 
-# ---------------------------------------------------------------------------
-# Path setup
-# ---------------------------------------------------------------------------
+logger = logging.getLogger("agentic_tools")
 
 _AGENTIC_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _AGENTIC_DIR.parent
@@ -31,19 +30,31 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 
-# ---------------------------------------------------------------------------
-# Data classes
-# ---------------------------------------------------------------------------
-
-
 @dataclass
 class SearchResult:
-    """Tek bir arama sonucu."""
-
     text: str
     score: float
     source: str
     metadata: Dict[str, Any]
+
+
+# ---------------------------------------------------------------------------
+# Embedding model loader
+# ---------------------------------------------------------------------------
+
+_EMBEDDING_MODELS = {
+    "paraphrase-multilingual-MiniLM-L12-v2": "paraphrase-multilingual-MiniLM-L12-v2 (Multilingual)",
+    "all-MiniLM-L6-v2": "all-MiniLM-L6-v2 (English, Fast)",
+}
+
+
+def _load_embedding_model():
+    from chunking import _load_model, get_device
+    embed_short = os.getenv("EMBEDDING_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
+    embed_display = _EMBEDDING_MODELS.get(embed_short, f"{embed_short} (Custom)")
+    device = get_device()
+    _, model = _load_model(embed_display, device)
+    return model
 
 
 # ---------------------------------------------------------------------------
@@ -52,28 +63,18 @@ class SearchResult:
 
 
 class VectorSearchTool:
-    """ChromaDB uzerinde vektor benzerlik aramasi yapan arac."""
+    """ChromaDB veya FAISS üzerinde vektör benzerlik araması."""
 
     TOOL_DEFINITION: Dict[str, Any] = {
         "type": "function",
         "function": {
             "name": "vector_search",
-            "description": (
-                "Yerel vektor veritabaninda (ChromaDB) anlamsal benzerlik aramasi yapar. "
-                "RAG bilgi tabanindaki belgelerde bilgi aramak icin kullanilir."
-            ),
+            "description": "Yerel vektör veritabanında anlamsal benzerlik araması yapar.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Aranacak soru veya konu",
-                    },
-                    "top_k": {
-                        "type": "integer",
-                        "description": "Dondurulecek maksimum sonuc sayisi (varsayilan: 3)",
-                        "default": 3,
-                    },
+                    "query": {"type": "string", "description": "Aranacak soru veya konu"},
+                    "top_k": {"type": "integer", "description": "Maks sonuç sayısı", "default": 3},
                 },
                 "required": ["query"],
             },
@@ -85,65 +86,182 @@ class VectorSearchTool:
         collection_name: str = "rag_demo",
         chroma_persist_dir: Optional[str] = None,
     ) -> None:
-        persist_dir = chroma_persist_dir or os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
+        self._embed_model = _load_embedding_model()
+        vector_store = os.getenv("VECTOR_STORE", "chroma").lower()
 
-        try:
-            import chromadb
-            self._client = chromadb.PersistentClient(path=persist_dir)
-            self._collection = self._client.get_or_create_collection(
-                name=collection_name,
-                metadata={"hnsw:space": "cosine"},
-            )
-        except Exception as exc:
-            raise RuntimeError(
-                f"ChromaDB baglantisi kurulamadi ({persist_dir}): {exc}"
-            ) from exc
+        if vector_store == "faiss":
+            self._store_type = "faiss"
+            self._init_faiss(collection_name)
+        else:
+            self._store_type = "chroma"
+            self._init_chroma(collection_name, chroma_persist_dir)
 
-        try:
-            from chunking import _load_model, get_device
-            device = get_device()
-            _MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2 (Multilingual)"
-            _, self._embed_model = _load_model(_MODEL_NAME, device)
-        except Exception as exc:
-            raise RuntimeError(f"Embedding modeli yuklenemedi: {exc}") from exc
+        logger.info("VectorSearchTool hazır – store=%s, collection=%s", self._store_type, collection_name)
 
-        logger.info("VectorSearchTool hazir – collection=%s", collection_name)
-
-    def search(self, query: str, top_k: int = 3) -> List[SearchResult]:
-        """Vektor benzerlik aramasi yapar."""
-        query_embedding = self._embed_model.encode(
-            [query], show_progress_bar=False
-        ).tolist()
-
-        count = self._collection.count()
-        if count == 0:
-            logger.warning("ChromaDB koleksiyonu bos. Once veri yukleyin.")
-            return []
-
-        results = self._collection.query(
-            query_embeddings=query_embedding,
-            n_results=min(top_k, count),
-            include=["documents", "metadatas", "distances"],
+    def _init_chroma(self, collection_name, persist_dir):
+        persist_dir = persist_dir or os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
+        import chromadb
+        self._chroma_client = chromadb.PersistentClient(path=persist_dir)
+        self._collection = self._chroma_client.get_or_create_collection(
+            name=collection_name, metadata={"hnsw:space": "cosine"},
         )
 
-        search_results: List[SearchResult] = []
-        if results and results["documents"] and results["documents"][0]:
-            for doc, meta, dist in zip(
-                results["documents"][0],
-                results["metadatas"][0],
-                results["distances"][0],
-            ):
-                score = 1.0 - dist
-                search_results.append(
-                    SearchResult(
-                        text=doc,
-                        score=score,
-                        source=meta.get("source_file", "bilinmeyen"),
-                        metadata=meta,
-                    )
-                )
+    def _init_faiss(self, collection_name):
+        import faiss
+        self._faiss = faiss
+        self._faiss_dir = os.getenv("FAISS_INDEX_DIR", "./faiss_index")
+        self._collection_name = collection_name
+        self._faiss_index = None
+        self._faiss_docs: List[str] = []
+        self._faiss_metas: List[Dict] = []
+        self._faiss_ids: List[str] = []
+        idx_path = os.path.join(self._faiss_dir, f"{collection_name}.index")
+        meta_path = os.path.join(self._faiss_dir, f"{collection_name}.meta.npz")
+        if os.path.exists(idx_path) and os.path.exists(meta_path):
+            self._faiss_index = faiss.read_index(idx_path)
+            data = np.load(meta_path, allow_pickle=True)
+            self._faiss_docs = data["documents"].tolist()
+            self._faiss_metas = [json.loads(m) for m in data["metadatas"].tolist()]
+            self._faiss_ids = data["ids"].tolist()
 
-        return search_results
+    def search(self, query: str, top_k: int = 3) -> List[SearchResult]:
+        qe = self._embed_model.encode([query], show_progress_bar=False).tolist()
+
+        if self._store_type == "faiss":
+            return self._search_faiss(qe[0], top_k)
+        return self._search_chroma(qe, top_k)
+
+    def _search_chroma(self, qe, top_k):
+        count = self._collection.count()
+        if count == 0:
+            return []
+        results = self._collection.query(
+            query_embeddings=qe, n_results=min(top_k, count),
+            include=["documents", "metadatas", "distances"],
+        )
+        out = []
+        if results and results["documents"] and results["documents"][0]:
+            for doc, meta, dist in zip(results["documents"][0], results["metadatas"][0], results["distances"][0]):
+                out.append(SearchResult(text=doc, score=1.0 - dist, source=meta.get("source_file", "?"), metadata=meta))
+        return out
+
+    def _search_faiss(self, qe, top_k):
+        if self._faiss_index is None or self._faiss_index.ntotal == 0:
+            return []
+        qv = np.array([qe], dtype=np.float32)
+        norm = np.linalg.norm(qv)
+        if norm > 0:
+            qv = qv / norm
+        k = min(top_k, self._faiss_index.ntotal)
+        scores, indices = self._faiss_index.search(qv, k)
+        out = []
+        for score, idx in zip(scores[0], indices[0]):
+            if 0 <= idx < len(self._faiss_docs):
+                out.append(SearchResult(
+                    text=self._faiss_docs[idx], score=float(score),
+                    source=self._faiss_metas[idx].get("source_file", "?"),
+                    metadata=self._faiss_metas[idx],
+                ))
+        return out
+
+    def ingest_directory(self, data_dir: str) -> int:
+        """Dizindeki dosyaları vektör store'a yükler."""
+        from chunking import (
+            read_pdf_content, read_txt_content, read_tabular_data,
+            sentence_chunk_with_overlap, create_chunk_record, normalize_whitespace,
+        )
+        from config import APP_CONFIG
+
+        defaults = APP_CONFIG["default_values"]
+        max_tokens, overlap = defaults["max_tokens"], defaults["overlap"]
+        from chunking import _load_model, get_device
+        embed_short = os.getenv("EMBEDDING_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
+        embed_display = _EMBEDDING_MODELS.get(embed_short, f"{embed_short} (Custom)")
+        device = get_device()
+        tokenizer, _ = _load_model(embed_display, device)
+
+        supported = {"pdf", "txt", "csv", "xlsx", "xls", "docx"}
+        data_path = Path(data_dir)
+        total = 0
+
+        for fpath in sorted(data_path.iterdir()):
+            if not fpath.is_file():
+                continue
+            ext = fpath.suffix.lstrip(".").lower()
+            if ext not in supported:
+                continue
+
+            try:
+                if ext in ("csv", "xlsx", "xls"):
+                    import pandas as pd
+                    with open(fpath, "rb") as f:
+                        df = read_tabular_data(f, ext)
+                    if df is None or df.empty:
+                        continue
+                    chunks = []
+                    for ri, row in df.iterrows():
+                        rt = normalize_whitespace(" | ".join(f"{c}: {v}" for c, v in row.items() if pd.notna(v)))
+                        if rt.strip():
+                            for pi, ct in enumerate(sentence_chunk_with_overlap(rt, tokenizer, max_tokens, overlap)):
+                                chunks.append(create_chunk_record(file_name=fpath.name, source_type=ext, text=ct, part_index=pi))
+                else:
+                    with open(fpath, "rb") as f:
+                        if ext == "pdf":
+                            raw = read_pdf_content(f)
+                        elif ext == "txt":
+                            raw = read_txt_content(f)
+                        elif ext == "docx":
+                            from chunking import read_docx_content
+                            raw = read_docx_content(f)
+                        else:
+                            continue
+                    if not raw or not raw.strip():
+                        continue
+                    text = normalize_whitespace(raw)
+                    chunks = [create_chunk_record(file_name=fpath.name, source_type=ext, text=ct, part_index=i)
+                              for i, ct in enumerate(sentence_chunk_with_overlap(text, tokenizer, max_tokens, overlap))]
+
+                if not chunks:
+                    continue
+
+                texts = [c["text"] for c in chunks]
+                embeddings = self._embed_model.encode(texts, show_progress_bar=False).tolist()
+                ids = [c["chunk_id"] for c in chunks]
+                metas = [{"source_file": c.get("file", fpath.name), "source_type": ext} for c in chunks]
+
+                if self._store_type == "chroma":
+                    self._collection.upsert(ids=ids, embeddings=embeddings, documents=texts, metadatas=metas)
+                else:
+                    self._faiss_ingest(ids, embeddings, texts, metas)
+
+                total += len(chunks)
+            except Exception as exc:
+                logger.error("Dosya hatası (%s): %s", fpath.name, exc)
+
+        return total
+
+    def _faiss_ingest(self, ids, embeddings, documents, metadatas):
+        vectors = np.array(embeddings, dtype=np.float32)
+        norms = np.linalg.norm(vectors, axis=1, keepdims=True)
+        norms[norms == 0] = 1
+        vectors = vectors / norms
+
+        if self._faiss_index is None:
+            self._faiss_index = self._faiss.IndexFlatIP(vectors.shape[1])
+
+        self._faiss_index.add(vectors)
+        self._faiss_ids.extend(ids)
+        self._faiss_docs.extend(documents)
+        self._faiss_metas.extend(metadatas)
+
+        os.makedirs(self._faiss_dir, exist_ok=True)
+        self._faiss.write_index(self._faiss_index, os.path.join(self._faiss_dir, f"{self._collection_name}.index"))
+        np.savez(
+            os.path.join(self._faiss_dir, f"{self._collection_name}.meta.npz"),
+            documents=np.array(self._faiss_docs, dtype=object),
+            metadatas=np.array([json.dumps(m) for m in self._faiss_metas], dtype=object),
+            ids=np.array(self._faiss_ids, dtype=object),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -152,26 +270,20 @@ class VectorSearchTool:
 
 
 class WebSearchTool:
-    """Web arama simulasyonu (demo amacli).
+    """Web arama simülasyonu (demo amaçlı).
 
-    Gercek implementasyon icin: SerpAPI, Tavily veya DuckDuckGo API kullanilabilir.
+    Gerçek implementasyon için: SerpAPI, Tavily veya DuckDuckGo API kullanılabilir.
     """
 
     TOOL_DEFINITION: Dict[str, Any] = {
         "type": "function",
         "function": {
             "name": "web_search",
-            "description": (
-                "Internette guncel bilgi arar. Yerel veritabaninda bulunamayan "
-                "guncel konular veya genel bilgi icin kullanilir."
-            ),
+            "description": "İnternette güncel bilgi arar.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Aranacak konu veya soru",
-                    },
+                    "query": {"type": "string", "description": "Aranacak konu"},
                 },
                 "required": ["query"],
             },
@@ -179,36 +291,20 @@ class WebSearchTool:
     }
 
     _DEMO_RESPONSES: Dict[str, str] = {
-        "rag": (
-            "RAG (Retrieval-Augmented Generation), LLM'lerin harici bilgi kaynaklariyla "
-            "zenginlestirilmesini saglayan bir mimari yaklasimdir. 2020 yilinda Meta AI "
-            "tarafindan tanitilmistir."
-        ),
-        "chromadb": (
-            "ChromaDB, Python-native acik kaynakli bir vektor veritabanidir. "
-            "Sifir yapilandirma ile calisir ve yerel gelistirme icin idealdir."
-        ),
-        "embedding": (
-            "Embedding modelleri, metni yuksek boyutlu vektorlere donusturur. "
-            "Populer modeller: sentence-transformers, OpenAI text-embedding-3, Cohere embed-v4."
-        ),
-        "llm": (
-            "Buyuk Dil Modelleri (LLM), transformer mimarisi uzerine kurulu dil modelleridir. "
-            "GPT-4, Claude, Gemini ve Llama populer orneklerdir."
-        ),
+        "rag": "RAG (Retrieval-Augmented Generation), LLM'lerin harici bilgi kaynaklarıyla zenginleştirilmesini sağlayan bir mimari yaklaşımdır.",
+        "chromadb": "ChromaDB, Python-native açık kaynaklı bir vektör veritabanıdır.",
+        "faiss": "FAISS (Facebook AI Similarity Search), Meta tarafından geliştirilen yüksek performanslı vektör arama kütüphanesidir.",
+        "embedding": "Embedding modelleri, metni yüksek boyutlu vektörlere dönüştürür. Popüler: sentence-transformers, OpenAI text-embedding-3.",
+        "llm": "Büyük Dil Modelleri: GPT-4, Claude, Gemini ve Llama popüler örneklerdir.",
+        "vllm": "vLLM, yüksek throughput LLM inference engine'dir. PagedAttention ile verimli bellek yönetimi sağlar.",
     }
 
     def search(self, query: str) -> str:
-        """Web aramasi simule eder."""
         query_lower = query.lower()
         for keyword, response in self._DEMO_RESPONSES.items():
             if keyword in query_lower:
-                logger.info("WebSearchTool: '%s' icin demo yanit donduruldu", query)
-                return f"[Web Arama Sonucu - Demo]\n{response}"
-
+                return f"[Web Arama - Demo]\n{response}"
         return (
-            f"[Web Arama Sonucu - Demo]\n"
-            f"'{query}' icin web aramasi yapildi. "
-            "Bu demo'da gercek web aramasi yapilmamaktadir. "
-            "Gercek implementasyon icin SerpAPI veya Tavily entegre edilebilir."
+            f"[Web Arama - Demo]\n'{query}' için arama yapıldı. "
+            "Gerçek implementasyon için SerpAPI veya Tavily entegre edilebilir."
         )

@@ -1,6 +1,14 @@
 # Agentic RAG Demo dependencies
-openai>=1.10.0
-chromadb>=0.4.22
 sentence-transformers>=2.2.0
 python-dotenv>=1.0.0
 numpy>=1.24.0
+
+# Vector Stores (en az birini kurun)
+chromadb>=0.4.22
+faiss-cpu>=1.7.4
+
+# LLM Providers (kullanacağınızı kurun)
+openai>=1.10.0
+google-genai>=1.0.0
+anthropic>=0.40.0
+ollama>=0.1.0

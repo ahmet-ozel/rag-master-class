@@ -14,12 +14,17 @@ venv/
 
 # Data / Storage
 chroma_db/
+faiss_index/
 evaluation/results.json
+*.npy
 
 # IDE
 .vscode/
 .idea/
 *.swp
+
+# Kiro / Spec files
+.kiro/
 
 # OS
 .DS_Store
