@@ -4,19 +4,19 @@ Klasik RAG, düşünen bir ajanın olmadığı, her şeyin mimar tarafından ön
 
 ---
 
-## 🏗️ KISIM 1: VERİ HAZIRLIĞI (Data Ingestion Pipeline)
+## KISIM 1: VERİ HAZIRLIĞI (Data Ingestion Pipeline)
 
 ```mermaid
 graph LR
-    A[📄 Belge Yükleme<br/>PDF/DOCX/TXT/CSV/Excel] --> B[🛠️ Adım 1: Ön İşleme<br/>Formata özel temizlik]
-    B --> C[✂️ Adım 2: Parçalama<br/>Cümle-duyarlı / Satır-tabanlı]
-    C --> D[🔢 Adım 3: Vektörleştirme<br/>Vektör üretimi]
-    D --> E[🗄️ Adım 4: Depolama<br/>Vektör DB + Metadata]
+    A[ Belge Yükleme<br/>PDF/DOCX/TXT/CSV/Excel] --> B[ Adım 1: Ön İşleme<br/>Formata özel temizlik]
+    B --> C[ Adım 2: Parçalama<br/>Cümle-duyarlı / Satır-tabanlı]
+    C --> D[ Adım 3: Vektörleştirme<br/>Vektör üretimi]
+    D --> E[ Adım 4: Depolama<br/>Vektör DB + Metadata]
 ```
 
 *(Bu kısım kullanıcıdan bağımsızdır. Arka planda şirketin verilerinin yutulup, temizlenip veritabanına dizildiği aşamadır.)*
 
-### 🛠️ ADIM 1: Veri Alma ve Ön İşleme (Preprocessing)
+### ADIM 1: Veri Alma ve Ön İşleme (Preprocessing)
 
 **Amaç:** Sisteme giren çöpleri temizlemek ve belgeleri makinenin anlayacağı saf formata çevirmek.
 
@@ -35,9 +35,9 @@ Geleneksel OCR motorları veya Yeni Nesil Görsel Yapay Zeka (Vision LLM) modell
 
 - **Geleneksel OCR Motorları:** PaddleOCR (PP-Structure) veya Surya OCR kullanılır. Standart tabloları Markdown'a çevirir, logoları silerler.
 
-- **☁️ Bulut Vision (VLM) Modelleri:** GPT-4.1, Claude Sonnet 4.5 veya Gemini 2.5 Pro. Python kodu resmi bu API'lere yollar. Bu modeller sayfaya "insan gibi" bakar; iç içe geçmiş şeytani tabloları, el yazılarını ve infografikleri kusursuz bir Markdown metnine çevirip boru hattına geri verir. Google Document AI ve Azure AI Document Intelligence gibi özel doküman çıkarım API'leri de yüksek hacimli işlemler için güçlü alternatiflerdir.
+- ** Bulut Vision (VLM) Modelleri:** GPT-4.1, Claude Sonnet 4.5 veya Gemini 2.5 Pro. Python kodu resmi bu API'lere yollar. Bu modeller sayfaya "insan gibi" bakar; iç içe geçmiş şeytani tabloları, el yazılarını ve infografikleri kusursuz bir Markdown metnine çevirip boru hattına geri verir. Google Document AI ve Azure AI Document Intelligence gibi özel doküman çıkarım API'leri de yüksek hacimli işlemler için güçlü alternatiflerdir.
 
-- **🖥️ Yerel (Local) Vision Modelleri:** Veri gizliliği şartsa ve sunucuda GPU varsa açık kaynaklı Vision modeller kullanılır:
+- ** Yerel (Local) Vision Modelleri:** Veri gizliliği şartsa ve sunucuda GPU varsa açık kaynaklı Vision modeller kullanılır:
   - **Genel VLM'ler:** Qwen2.5-VL (3B/7B/72B), InternVL3 (8B/78B), Llama-4-Scout-17B (Vision destekli). Qwen2.5-VL özellikle belge ve tablo anlama konusunda sınıfının lideridir.
   - **Doküman-Spesifik VLM'ler:** GOT-OCR 2.0, Chandra, SmolDocling (IBM). Bu modeller sadece doküman okumak için eğitilmiş olup tablo çıkarımı ve yapısal çözümlemede genel modellerin önüne geçebilir.
   - **Uçtan Uca Doküman Çözümleme Framework'leri:** Docling (IBM) veya Marker v2 gibi araçlar OCR + layout analizi + Markdown çıktısını tek bir pipeline'da birleştirir. Elle VLM yönetmeye gerek kalmaz.
@@ -47,7 +47,7 @@ Gereksiz sekme boşlukları (`strip()`), bozuk Unicode karakterler (Örn: `\u00A
 
 ---
 
-### ✂️ ADIM 2: Parçalama (Chunking) Stratejileri
+### ADIM 2: Parçalama (Chunking) Stratejileri
 
 **Amaç:** Dev belgeleri, LLM'in okuyabileceği mantıklı ve küçük lokmalara ayırmak.
 
@@ -67,15 +67,15 @@ OCR/VLM'den gelen belgelerde kullanılır. Bir fatura tablosu ortadan ikiye böl
 #### D. Özyinelemeli (Recursive Character)
 Düz metinler için kullanılır. Cümle bütünlüğünü koruyarak metni 500-1000 karakterlik parçalara böler.
 
-#### E. Semantik (Semantic) Chunking [⭐ İLERİ SEVİYE]
+#### E. Semantik (Semantic) Chunking [ İLERİ SEVİYE]
 Sabit boyut yerine, bir embedding modeli kullanarak cümlelerin anlamsal yakınlığına göre otomatik bölme yapar. Anlam değiştiği yerde (konu geçişi) bıçak düşer. LangChain `SemanticChunker` veya LlamaIndex `SemanticSplitterNodeParser` ile uygulanır. Daha akıllı bölme sağlar ancak işlem maliyeti daha yüksektir.
 
-#### 💡 Parent-Child (Ebeveyn-Çocuk) Stratejisi
+#### Parent-Child (Ebeveyn-Çocuk) Stratejisi
 Chunk'lar küçük tutularak arama hassasiyeti artırılır, ancak LLM'e verilen bağlam genişletilir. Örn: Arama 200 tokenlık "çocuk" chunk'ta yapılır, bulununca o chunk'ın ait olduğu 1000 tokenlık "ebeveyn" paragraf LLM'e gönderilir. Bu, hem isabetli arama hem de zengin bağlam sağlar.
 
 ---
 
-### 🔢 ADIM 3: Vektörleştirme (Embedding Modeli Seçimi)
+### ADIM 3: Vektörleştirme (Embedding Modeli Seçimi)
 
 **Amaç:** Metin parçalarını makine diline (yönü ve büyüklüğü olan koordinatlara / sayılara) çevirmek.
 
@@ -83,25 +83,25 @@ Chunk'lar küçük tutularak arama hassasiyeti artırılır, ancak LLM'e verilen
 
 **Seçenekler (Dile ve Chunk Boyutuna Göre):**
 
-- **🖥️ Yerel - bge-m3 (BAAI):** Türkçe dahil 100+ dil için açık ara en dengeli modeldir. Hem Dense hem Sparse vektör üretir (Hybrid Search için tek model yeter). 8192 token'a kadar devasa chunk'ları yutabilir. MTEB liderlik tablosunda çok dilli kategoride sürekli üst sıralardadır.
+- ** Yerel - bge-m3 (BAAI):** Türkçe dahil 100+ dil için açık ara en dengeli modeldir. Hem Dense hem Sparse vektör üretir (Hybrid Search için tek model yeter). 8192 token'a kadar devasa chunk'ları yutabilir. MTEB liderlik tablosunda çok dilli kategoride sürekli üst sıralardadır.
 
-- **🖥️ Yerel - multilingual-e5-large-instruct (Microsoft):** Instruction-tuned olması sayesinde sorgu ve doküman için farklı prefix'lerle çalışır. Türkçe dahil güçlü çok dilli performans sunar. 512 token limiti vardır.
+- ** Yerel - multilingual-e5-large-instruct (Microsoft):** Instruction-tuned olması sayesinde sorgu ve doküman için farklı prefix'lerle çalışır. Türkçe dahil güçlü çok dilli performans sunar. 512 token limiti vardır.
 
-- **🖥️ Yerel - paraphrase-multilingual-MiniLM-L12-v2:** Çok hızlıdır, CPU'da bile saniyeler içinde çalışır. Ancak maksimum 512 token destekler. Düşük kaynaklı ortamlar ve küçük chunk'lar için idealdir.
+- ** Yerel - paraphrase-multilingual-MiniLM-L12-v2:** Çok hızlıdır, CPU'da bile saniyeler içinde çalışır. Ancak maksimum 512 token destekler. Düşük kaynaklı ortamlar ve küçük chunk'lar için idealdir.
 
-- **🖥️ Yerel - nomic-embed-text-v2-moe (Nomic AI):** MoE mimarisiyle hafif ama güçlüdür. 8192 token context, Matryoshka boyut desteği (256-768 arası ayarlanabilir). Ollama ile kolayca çalıştırılabilir.
+- ** Yerel - nomic-embed-text-v2-moe (Nomic AI):** MoE mimarisiyle hafif ama güçlüdür. 8192 token context, Matryoshka boyut desteği (256-768 arası ayarlanabilir). Ollama ile kolayca çalıştırılabilir.
 
-- **☁️ Bulut - text-embedding-3-large (OpenAI):** Ucuz, çok dilli ve güçlü API modelidir. Boyut kısaltma (dimension reduction) desteği sayesinde maliyet-performans dengesini ayarlayabilirsiniz (3072 → 1536 → 256 boyut).
+- ** Bulut - text-embedding-3-large (OpenAI):** Ucuz, çok dilli ve güçlü API modelidir. Boyut kısaltma (dimension reduction) desteği sayesinde maliyet-performans dengesini ayarlayabilirsiniz (3072  1536  256 boyut).
 
-- **☁️ Bulut - embed-v4 (Cohere):** Çok dilli performansta OpenAI'a rakip, özellikle arama kalitesinde güçlüdür. int8/binary quantization desteği ile depolama maliyetini düşürür.
+- ** Bulut - embed-v4 (Cohere):** Çok dilli performansta OpenAI'a rakip, özellikle arama kalitesinde güçlüdür. int8/binary quantization desteği ile depolama maliyetini düşürür.
 
-- **☁️ Bulut - Voyage 3.5 (Voyage AI):** Kod ve teknik doküman embedding'inde çok güçlüdür. Genel metin için de rekabetçidir. Anthropic'in önerdiği embedding partnerıdır.
+- ** Bulut - Voyage 3.5 (Voyage AI):** Kod ve teknik doküman embedding'inde çok güçlüdür. Genel metin için de rekabetçidir. Anthropic'in önerdiği embedding partnerıdır.
 
-**⚡ Pratik Karar:** Türkçe ağırlıklı bir projede yerel çalışacaksanız **bge-m3** ile başlayın. Bulutta çalışıyorsanız **text-embedding-3-large** en güvenli seçimdir.
+** Pratik Karar:** Türkçe ağırlıklı bir projede yerel çalışacaksanız **bge-m3** ile başlayın. Bulutta çalışıyorsanız **text-embedding-3-large** en güvenli seçimdir.
 
 ---
 
-### 🗄️ ADIM 4: Depolama ve Etiketleme (Vector DB & Metadata)
+### ADIM 4: Depolama ve Etiketleme (Vector DB & Metadata)
 
 **Amaç:** Vektörleri kalıcı olarak saklamak ve onlara kimlik kartları (Metadata) yapıştırmak.
 
@@ -109,37 +109,37 @@ Chunk'lar küçük tutularak arama hassasiyeti artırılır, ancak LLM'e verilen
 
 **Seçenekler:**
 
-- **🖥️ Yerel (Kurumsal/Dinamik):**
+- ** Yerel (Kurumsal/Dinamik):**
   - **Milvus / Zilliz:** Yüksek hacimli, dağıtık mimariler için endüstri standardıdır. GPU-accelerated arama, Hybrid Search (Dense + Sparse) ve gelişmiş filtreleme desteği sunar.
   - **Qdrant:** Rust ile yazılmış, çok hızlıdır. Zengin metadata filtreleme, Named Vectors (aynı chunk için farklı embedding'ler saklama) ve Hybrid Search desteği sunar. Docker ile tek komutla ayağa kalkar.
 
-- **🖥️ Yerel (Statik/Küçük):**
+- ** Yerel (Statik/Küçük):**
   - **ChromaDB:** Python-native, klasör gibi anında çalışır. Prototipleme ve küçük projeler için idealdir.
   - **FAISS (Meta):** En hızlı brute-force ve IVF arama kütüphanesidir. Metadata filtreleme yoktur, saf hız içindir.
   - **LanceDB:** Serverless, disk-tabanlı vektör veritabanıdır. Sıfır yapılandırma ile çalışır, Lance formatı sayesinde çok düşük bellek tüketir.
 
-- **☁️ Bulut:**
+- ** Bulut:**
   - **Pinecone:** Tam yönetimli (serverless) vektör veritabanıdır. Sunucu masrafı istenmiyorsa API ile bağlanır, ölçekleme otomatiktir.
   - **Weaviate Cloud:** Hibrit arama ve modüler yapısıyla öne çıkar. GraphQL API ile güçlü sorgulama imkanı sunar.
 
-**💡 Metadata Tasarım İpucu:** Her chunk'a en az şu etiketleri yapıştırın: `source_file`, `page_number`, `date`, `category`. Bu etiketler hem filtreleme hem de LLM cevabına kaynak gösterme (citation) için kritiktir.
+** Metadata Tasarım İpucu:** Her chunk'a en az şu etiketleri yapıştırın: `source_file`, `page_number`, `date`, `category`. Bu etiketler hem filtreleme hem de LLM cevabına kaynak gösterme (citation) için kritiktir.
 
 ---
 
-## 🚀 KISIM 2: SORGULAMA VE CEVAP ÜRETİMİ (Query Pipeline)
+## KISIM 2: SORGULAMA VE CEVAP ÜRETİMİ (Query Pipeline)
 
 ```mermaid
 graph LR
-    A[❓ Kullanıcı Sorgusu] --> B[🛑 Adım 5: Niyet Filtresi]
-    B --> C[🧠 Adım 6: Sorgu İyileştirme]
-    C --> D[📐 Adım 7: Benzerlik Araması]
-    D --> E[⚖️ Adım 8: Yeniden Sıralama]
-    E --> F[📝 Adım 9: LLM Üretimi]
+    A[ Kullanıcı Sorgusu] --> B[ Adım 5: Niyet Filtresi]
+    B --> C[ Adım 6: Sorgu İyileştirme]
+    C --> D[ Adım 7: Benzerlik Araması]
+    D --> E[ Adım 8: Yeniden Sıralama]
+    E --> F[ Adım 9: LLM Üretimi]
 ```
 
 *(Kullanıcı ekrana mesaj yazdığı an milisaniyeler içinde gerçekleşen süreçtir.)*
 
-### 🛑 ADIM 5: Niyet Filtresi ve Yönlendirme (Intent Routing) [⭐ OPSİYONEL]
+### ADIM 5: Niyet Filtresi ve Yönlendirme (Intent Routing) [ OPSİYONEL]
 
 **Amaç:** Kullanıcının mesajının gerçekten bir "Belge Araması (RAG)" gerektirip gerektirmediğini anlamak ve sistemi korumak.
 
@@ -151,13 +151,13 @@ graph LR
 - **Hafif LLM Sınıflandırıcı:** Küçük bir model (Örn: Qwen3-1.7B veya bir fine-tuned BERT) mesajın kategorisini belirler: `chitchat`, `out_of_scope`, `rag_query`. Semantic Router'dan daha esnek ama biraz daha yavaştır.
 
 **Örnek Akış:**
-- Kullanıcı "Merhaba" derse → Arama YAPMA. Direkt "Merhaba, size nasıl yardımcı olabilirim?" de.
-- Kullanıcı "Kek tarifi ver" derse → Arama YAPMA. "Sadece şirket belgeleri hakkında konuşabilirim" de.
-- Kullanıcı "İzin hakkım nedir?" derse → RAG boru hattına onay ver ve Adım 6'ya geç.
+- Kullanıcı "Merhaba" derse  Arama YAPMA. Direkt "Merhaba, size nasıl yardımcı olabilirim?" de.
+- Kullanıcı "Kek tarifi ver" derse  Arama YAPMA. "Sadece şirket belgeleri hakkında konuşabilirim" de.
+- Kullanıcı "İzin hakkım nedir?" derse  RAG boru hattına onay ver ve Adım 6'ya geç.
 
 ---
 
-### 🧠 ADIM 6: Sorgu İyileştirme (Query Transformation) [⭐ OPSİYONEL]
+### ADIM 6: Sorgu İyileştirme (Query Transformation) [ OPSİYONEL]
 
 **Amaç:** Kullanıcının kısa, tembelce veya devrik yazdığı soruyu, veritabanının anlayacağı mükemmel formata çevirmek.
 
@@ -171,11 +171,11 @@ graph LR
 
 - **HyDE (Hypothetical Document Embeddings):** LLM'e sahte/hayali bir cevap yazdırır ve "Bu hayali cevaba en çok benzeyen" gerçek belgeleri arar. Özellikle kullanıcının sorusu ile belgenin dili arasında büyük fark olduğu durumlarda etkilidir.
 
-- **Step-Back Prompting:** Çok spesifik bir soruyu daha genel bir soruya çevirerek arama kapsamını genişletir. Örn: "Ahmet Bey'in 2024 Mart izni" → "Çalışan yıllık izin hakları ve prosedürü."
+- **Step-Back Prompting:** Çok spesifik bir soruyu daha genel bir soruya çevirerek arama kapsamını genişletir. Örn: "Ahmet Bey'in 2024 Mart izni"  "Çalışan yıllık izin hakları ve prosedürü."
 
 ---
 
-### 📐 ADIM 7: Benzerlik Araması (Retrieval & Distance Metrics)
+### ADIM 7: Benzerlik Araması (Retrieval & Distance Metrics)
 
 **Amaç:** İyileştirilmiş soruyu veritabanında aratıp en alakalı belge parçacıklarını (Chunk'ları) bulmak.
 
@@ -193,7 +193,7 @@ graph LR
 
 ---
 
-### ⚖️ ADIM 8: Yeniden Sıralama ve A/B Testi (Reranking) [⭐ OPSİYONEL]
+### ADIM 8: Yeniden Sıralama ve A/B Testi (Reranking) [ OPSİYONEL]
 
 **Amaç:** Veritabanından gelen en iyi 20 sonucu, gerçek bir insan gibi okuyup "Gerçekten sorunun cevabı bu mu?" diye tekrar puanlamak.
 
@@ -201,11 +201,11 @@ graph LR
 
 **Nasıl Çalışır?:**
 
-- **🖥️ Yerel Reranker'lar:**
+- ** Yerel Reranker'lar:**
   - **bge-reranker-v2-m3 (BAAI):** Çok dilli, Türkçe'de kanıtlanmış performans. Hafif ve hızlıdır.
   - **Jina Reranker v2 (jina-reranker-v2-base-multilingual):** 100+ dil desteği, 1024 token'a kadar uzun chunk'larla çalışır.
 
-- **☁️ Bulut Reranker'lar:**
+- ** Bulut Reranker'lar:**
   - **Cohere Rerank 3.5:** API ile çalışır, çok dilli ve çok güçlüdür. Entegrasyonu çok kolaydır (tek API çağrısı).
   - **Voyage Rerank 2:** Teknik dokümanlar ve kod için özellikle güçlüdür.
 
@@ -213,7 +213,7 @@ graph LR
 
 ---
 
-### 📝 ADIM 9: Üretim ve Güvenlik Rayları (Generation & Guardrails)
+### ADIM 9: Üretim ve Güvenlik Rayları (Generation & Guardrails)
 
 **Amaç:** Bulunan belge parçalarını (bağlamı) okuyarak kullanıcıya doğal ve akıcı bir dille nihai cevabı vermek.
 
@@ -229,42 +229,42 @@ graph LR
 
 **Cevap Üretici Motor (LLM) Seçimi:** Hazırlanan bu paket, altyapı tercihinize göre iki farklı ortamdan birine gönderilir:
 
-#### 🖥️ YEREL (LOCAL) ÜRETİM (Veri Gizliliği İçin)
+#### YEREL (LOCAL) ÜRETİM (Veri Gizliliği İçin)
 Veriler şirket sunucusundan dışarı çıkmaz. Yüksek trafik ve yüksek throughput için **vLLM** veya **SGLang**; hızlı kurulum ve prototipleme için **Ollama** kullanılır.
 
 **Modeller (Güncel Öneriler):**
 
 | Model | Boyut | Güçlü Yanı | Ne Zaman Tercih Edilmeli? |
 |---|---|---|---|
-| **Qwen3 ⭐** | 8B / 14B / 32B | Türkçe dahil çok dilli performansta sınıf lideri. Thinking/Non-thinking modları, mükemmel JSON üretimi ve uzun context desteği. | **Her zaman ilk tercih.** 8B düşük donanım, 14B-32B yüksek kalite. |
+| **Qwen3 ** | 8B / 14B / 32B | Türkçe dahil çok dilli performansta sınıf lideri. Thinking/Non-thinking modları, mükemmel JSON üretimi ve uzun context desteği. | **Her zaman ilk tercih.** 8B düşük donanım, 14B-32B yüksek kalite. |
 | **Llama 4 Scout** | 17B (aktif) | Meta'nın MoE modeli. 10M token context window. Hızlı ve verimli. | Çok uzun belge bağlamı gerektiğinde veya İngilizce ağırlıklı projelerde. |
 | **Gemma 3** | 4B / 12B / 27B | Google'ın hafif ama güçlü modeli. 128K context. | Düşük VRAM bütçesi olan ortamlar, hızlı yanıt gereken durumlar. |
 | **Mistral Small 3.2** | 24B | Vision desteği dahil. Çok dilli, hızlı. | Hem metin hem görsel girdisi olan RAG pipeline'ları. |
 | **Phi-4** | 14B | Microsoft'un küçük ama güçlü modeli. Teknik ve mantık sorularında rakiplerinin üstünde. | Düşük kaynak, yüksek mantıksal çıkarım gereken durumlar. |
 
-> **⚡ Pratik Not:** Türkçe RAG projelerinde **Qwen3-14B + vLLM** kombinasyonu maliyet/performans açısından en iyi başlangıç noktasıdır. 8GB+ VRAM'li bir GPU ile çalışır.
+> ** Pratik Not:** Türkçe RAG projelerinde **Qwen3-14B + vLLM** kombinasyonu maliyet/performans açısından en iyi başlangıç noktasıdır. 8GB+ VRAM'li bir GPU ile çalışır.
 
-#### ☁️ BULUT (CLOUD) ÜRETİM (Yüksek Zeka İçin)
+#### BULUT (CLOUD) ÜRETİM (Yüksek Zeka İçin)
 Veri dışarı çıkabiliyorsa, sunucu masrafından kaçmak için API'ler kullanılır.
 
 **Modeller (Güncel Öneriler):**
 
 | Model | Güçlü Yanı | Ne Zaman Tercih Edilmeli? |
 |---|---|---|
-| **Claude Sonnet 4.5 (Anthropic) ⭐** | En yüksek talimat takibi, karmaşık tablo analizi, kusursuz Türkçe, düşük halüsinasyon oranı. | Kalite kritik olduğunda, karmaşık belge analizinde. |
+| **Claude Sonnet 4.5 (Anthropic) ** | En yüksek talimat takibi, karmaşık tablo analizi, kusursuz Türkçe, düşük halüsinasyon oranı. | Kalite kritik olduğunda, karmaşık belge analizinde. |
 | **GPT-4.1 (OpenAI)** | Çok güçlü genel zeka, geniş araç ekosistemi, Structured Outputs desteği. | Karmaşık çıkarım gereken ve JSON formatında çıktı istenen durumlar. |
 | **Gemini 2.5 Pro (Google)** | 1M token context window, mükemmel çok modlu anlama, rekabetçi fiyat. | Çok uzun belgeler, görsel + metin karışık bağlamlar. |
 | **Gemini 2.5 Flash (Google)** | Çok hızlı, çok ucuz, "thinking" budget ayarlanabilir. | Yüksek hacimli sorgular, maliyet optimizasyonu. |
 | **GPT-4.1 mini (OpenAI)** | GPT-4.1'in ucuz ve hızlı versiyonu. | Binlerce sorgunun işlendiği yüksek trafik senaryoları. |
 | **GPT-4.1 nano (OpenAI)** | En ucuz ve en hızlı. Basit çıkarım ve sınıflandırma için yeterli. | Niyet filtresi (Adım 5), sorgu rewriting (Adım 6) gibi yardımcı görevler. |
 
-> **💰 Maliyet Stratejisi:** Ana üretim için Claude Sonnet 4.5 veya GPT-4.1 kullanın. Adım 5 (Intent) ve Adım 6 (Query Rewriting) gibi yardımcı görevlerde GPT-4.1 nano veya Gemini 2.5 Flash kullanarak toplam maliyeti %60-80 düşürün.
+> ** Maliyet Stratejisi:** Ana üretim için Claude Sonnet 4.5 veya GPT-4.1 kullanın. Adım 5 (Intent) ve Adım 6 (Query Rewriting) gibi yardımcı görevlerde GPT-4.1 nano veya Gemini 2.5 Flash kullanarak toplam maliyeti %60-80 düşürün.
 
 ---
 
-## ⚠️ KRİTİK NOKTA: Kullanım Senaryosuna Göre Mimari Kararı
+## KRİTİK NOKTA: Kullanım Senaryosuna Göre Mimari Kararı
 
-### 📌 Statik Belge Kullanımı (Sistem Asistanı, Sabit Dokümanlar)
+### Statik Belge Kullanımı (Sistem Asistanı, Sabit Dokümanlar)
 
 Eğer RAG sisteminiz **sabit ve değişmeyen belgeler** üzerinde çalışacaksa (örneğin: şirket politikaları, ürün kılavuzları, sistem dokümantasyonu):
 
@@ -275,7 +275,7 @@ Eğer RAG sisteminiz **sabit ve değişmeyen belgeler** üzerinde çalışacaksa
 
 **Avantajlar:** Minimum kaynak tüketimi, düşük maliyet, basit deployment
 
-### 📌 Dinamik Belge Kullanımı (Doküman Asistanı, Sürekli Güncellenen İçerik)
+### Dinamik Belge Kullanımı (Doküman Asistanı, Sürekli Güncellenen İçerik)
 
 Eğer RAG sisteminiz **sürekli yeni belgeler alan** bir yapıda çalışacaksa (örneğin: müşteri doküman yükleme sistemi, canlı veri akışı):
 
@@ -289,7 +289,7 @@ Eğer RAG sisteminiz **sürekli yeni belgeler alan** bir yapıda çalışacaksa 
 
 ---
 
-## 📊 BONUS: Değerlendirme ve İzleme (Evaluation & Monitoring)
+## BONUS: Değerlendirme ve İzleme (Evaluation & Monitoring)
 
 *(Sisteminizin gerçekten çalışıp çalışmadığını nasıl anlarsınız?)*
 
@@ -306,11 +306,11 @@ RAG pipeline'ınızı canlıya almadan önce ve aldıktan sonra sürekli ölçme
 
 ---
 
-## 🔌 Genişletilebilirlik Noktaları
+## Genişletilebilirlik Noktaları
 
 > Bu depodaki demo pipeline, temel RAG akışını göstermektedir. Aşağıdaki ileri düzey yetenekler, proje ihtiyaçlarınıza göre entegre edebilmeniz için bilinçli olarak genişletilebilirlik noktaları olarak bırakılmıştır.
 
-### 🔍 OCR Entegrasyonu
+### OCR Entegrasyonu
 
 **Not:** Bu demo'da OCR adımı uygulanmamıştır. Taranmış belgeler için şunları entegre edebilirsiniz:
 
@@ -320,7 +320,7 @@ RAG pipeline'ınızı canlıya almadan önce ve aldıktan sonra sürekli ölçme
 
 **Demo'dan neden hariç tutuldu:** OCR, yerel ikili dosya kurulumları (PaddleOCR, Tesseract) veya bulut servisleri için API anahtarları gerektirir; bu da hızlı demo değerlendirmesini zorlaştıracak kurulum karmaşıklığı ekler.
 
-### ⚖️ Reranking Entegrasyonu
+### Reranking Entegrasyonu
 
 **Not:** Bu demo'da Reranking adımı uygulanmamıştır. Arama kalitesini artırmak için şunları ekleyebilirsiniz:
 
@@ -336,4 +336,4 @@ RAG pipeline'ınızı canlıya almadan önce ve aldıktan sonra sürekli ölçme
 
 ---
 
-**💡 Sonuç:** Projenizi tasarlarken kullanım senaryonuzu net bir şekilde belirleyin. Statik kullanım için gereksiz yere tüm servisleri ayakta tutmak kaynak israfıdır; dinamik kullanım için ise sadece sorgu pipeline'ı yeterli olmaz. Her adımda doğru model ve araç seçimi, sistemin hem kalitesini hem de maliyetini doğrudan belirler.
+** Sonuç:** Projenizi tasarlarken kullanım senaryonuzu net bir şekilde belirleyin. Statik kullanım için gereksiz yere tüm servisleri ayakta tutmak kaynak israfıdır; dinamik kullanım için ise sadece sorgu pipeline'ı yeterli olmaz. Her adımda doğru model ve araç seçimi, sistemin hem kalitesini hem de maliyetini doğrudan belirler.

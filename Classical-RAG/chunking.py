@@ -57,7 +57,7 @@ _NEWLINE_SPACE_RE = re.compile(r"[ \t\f\r]*\n[ \t\f\r]*")
 
 
 def normalize_whitespace(text: str) -> str:
-    """Normalize whitespace: NBSP → space, remove zero-width chars, collapse runs."""
+    """Normalize whitespace: NBSP  space, remove zero-width chars, collapse runs."""
     if not isinstance(text, str):
         try:
             text = str(text)
@@ -480,7 +480,7 @@ def process_zip_archive(
                 processed += 1
 
             if processed > 0:
-                st.success(f"Processed {processed} file(s) from {zip_label} → {len(chunks)} chunks.")
+                st.success(f"Processed {processed} file(s) from {zip_label}  {len(chunks)} chunks.")
                 return chunks
 
     except Exception as e_std:
@@ -530,7 +530,7 @@ def process_zip_archive(
                     st.warning(f"No supported files found inside {zip_label}.")
                 else:
                     st.success(
-                        f"Processed {processed} file(s) from {zip_label} (AES) → {len(chunks)} chunks."
+                        f"Processed {processed} file(s) from {zip_label} (AES)  {len(chunks)} chunks."
                     )
 
         except Exception as e_aes:
@@ -549,7 +549,7 @@ def get_device() -> str:
         return "cpu"
 
 
-@st.cache_resource(show_spinner="🔄 Loading model…")
+@st.cache_resource(show_spinner=" Loading model…")
 def _load_model(model_name: str, device: str) -> Tuple[AutoTokenizer, SentenceTransformer]:
     """Load tokenizer + SentenceTransformer (cached across reruns)."""
     cfg = get_model_config(model_name)
@@ -617,7 +617,7 @@ class DocumentProcessor:
                 rec["token_count"] = get_token_count(ct, self.tokenizer)
                 chunks.append(rec)
 
-            st.success(f"✅ {fname} → {len(chunks)} sentence-aware chunks")
+            st.success(f" {fname}  {len(chunks)} sentence-aware chunks")
 
         except Exception as e:
             log_exception(e, f"Failed to process {fname}: ")
@@ -735,7 +735,7 @@ class DocumentProcessor:
                             chunks.append(rec)
                             part_idx += 1
 
-                st.success(f"✅ {fname} → {len(chunks)} row-level chunks (structured table)")
+                st.success(f" {fname}  {len(chunks)} row-level chunks (structured table)")
 
             else:
                 # Unstructured table - flatten to prose and chunk normally
@@ -764,7 +764,7 @@ class DocumentProcessor:
                         rec["token_count"] = int(get_token_count(ct, self.tokenizer))
                         chunks.append(rec)
 
-                st.info(f"ℹ️ {fname} → {len(chunks)} document-style chunks (unstructured table)")
+                st.info(f"ℹ {fname}  {len(chunks)} document-style chunks (unstructured table)")
 
         except Exception as e:
             log_exception(e, f"Table processing error {fname}: ")
@@ -824,18 +824,18 @@ class DocumentProcessor:
 def main():
     """Main Streamlit application."""
 
-    st.set_page_config(page_title="Document Chunking & Embedding", page_icon="📄", layout="wide")
+    st.set_page_config(page_title="Document Chunking & Embedding", page_icon="", layout="wide")
     st.title(APP_CONFIG["title"])
     st.markdown("---")
 
-    st.info("✨ **Features:**")
+    st.info(" **Features:**")
     st.markdown(
         """
-- 📝 **Sentence-Aware:** Chunks never split mid-sentence
-- 🔤 **Word Integrity:** Words are never cut in half
-- 📊 **CSV/Excel:** Each row becomes a separate chunk
-- 🔠 **Text Normalization:** Lowercase / uppercase conversion
-- 📦 **ZIP Download:** JSON + NPY bundled together
+- **Sentence-Aware:** Chunks never split mid-sentence
+- **Word Integrity:** Words are never cut in half
+- **CSV/Excel:** Each row becomes a separate chunk
+- **Text Normalization:** Lowercase / uppercase conversion
+- **ZIP Download:** JSON + NPY bundled together
         """
     )
 
@@ -844,12 +844,12 @@ def main():
 
     with col1:
         model_name = st.selectbox(
-            "🧠 Select Embedding Model",
+            " Select Embedding Model",
             options=list(EMBEDDING_MODELS.keys()),
             help="Choose a model based on language and quality needs",
         )
         mcfg = get_model_config(model_name)
-        st.info(f"📝 {mcfg.get('description', 'No description')}")
+        st.info(f" {mcfg.get('description', 'No description')}")
 
     with col2:
         st.markdown("**Model Info:**")
@@ -876,8 +876,8 @@ def main():
         st.stop()
 
     # --- Settings ---
-    st.subheader("⚙️ Processing Settings")
-    st.markdown("### 📝 General")
+    st.subheader(" Processing Settings")
+    st.markdown("###  General")
 
     dv = APP_CONFIG["default_values"]
 
@@ -910,8 +910,8 @@ def main():
         )
 
     # Tabular
-    st.markdown("### 📊 Table / CSV / Excel Settings")
-    st.warning("⚠️ **Note:** In CSV/Excel files each row becomes a separate chunk. Rows are never merged!")
+    st.markdown("###  Table / CSV / Excel Settings")
+    st.warning(" **Note:** In CSV/Excel files each row becomes a separate chunk. Rows are never merged!")
 
     cE, cF, cG = st.columns(3)
     with cE:
@@ -932,10 +932,10 @@ def main():
         attach_row_data = st.checkbox(
             "Attach row data to JSON",
             bool(dv.get("attach_row_data", True)),
-            help="Embed full column→value mapping in each chunk",
+            help="Embed full columnvalue mapping in each chunk",
         )
     with cJ:
-        st.info("✅ Sentences are never split!")
+        st.info(" Sentences are never split!")
     with cK:
         flatten_row_values_to_root = st.checkbox(
             "Flatten column values to root JSON",
@@ -944,22 +944,22 @@ def main():
         )
 
     # Text normalization
-    st.markdown("### 🔤 Text Normalization")
-    st.info("ℹ️ Normalization is applied **after** chunks are created")
+    st.markdown("###  Text Normalization")
+    st.info("ℹ Normalization is applied **after** chunks are created")
 
     n1, n2, n3 = st.columns(3)
     with n1:
-        to_lower = st.checkbox("🔡 Convert to lowercase", False)
+        to_lower = st.checkbox(" Convert to lowercase", False)
     with n2:
-        to_upper = st.checkbox("🔠 Convert to UPPERCASE", False)
+        to_upper = st.checkbox(" Convert to UPPERCASE", False)
     with n3:
         if to_lower and to_upper:
-            st.warning("⚠️ Both selected - UPPERCASE takes priority.")
+            st.warning(" Both selected - UPPERCASE takes priority.")
         else:
-            st.success("✅ Ready")
+            st.success(" Ready")
 
     # Output
-    st.markdown("### 💾 Output Settings")
+    st.markdown("###  Output Settings")
     output_text_column = st.text_input(
         "Text column name", "text",
         help="Key name for the text field in JSON (e.g. text, chunk_text, content)",
@@ -970,7 +970,7 @@ def main():
     # --- File upload ---
     allowed = list(APP_CONFIG["supported_formats"]) + ["zip"]
     uploaded_files = st.file_uploader(
-        f"📁 Upload Documents ({', '.join(e.upper() for e in allowed)})",
+        f" Upload Documents ({', '.join(e.upper() for e in allowed)})",
         type=allowed,
         accept_multiple_files=True,
         key="doc_uploader",
@@ -978,7 +978,7 @@ def main():
     )
 
     if not uploaded_files and not st.session_state.get("results_ready"):
-        st.info("👆 Upload files to get started")
+        st.info(" Upload files to get started")
         return
 
     if uploaded_files and len(uploaded_files) > APP_CONFIG["max_files"]:
@@ -988,13 +988,13 @@ def main():
     # ZIP passwords
     zips = [f for f in (uploaded_files or []) if f.name.lower().endswith(".zip")]
     if zips:
-        with st.expander("🔐 ZIP Passwords", expanded=True):
+        with st.expander(" ZIP Passwords", expanded=True):
             st.info("Enter passwords for encrypted ZIP files.")
             for z in zips:
                 st.text_input(f"{z.name} password", type="password", key=f"zip_pwd::{z.name}")
 
     # --- Process ---
-    if uploaded_files and st.button("🚀 Process & Generate Embeddings", type="primary"):
+    if uploaded_files and st.button(" Process & Generate Embeddings", type="primary"):
         all_chunks: List[Dict[str, Any]] = []
         proc = DocumentProcessor(tokenizer, max_tokens, overlap, output_text_column)
 
@@ -1053,7 +1053,7 @@ def main():
                             ch[output_text_column] = ch[output_text_column].upper()
                         elif to_lower:
                             ch[output_text_column] = ch[output_text_column].lower()
-                st.info(f"✅ Text normalization applied: {'UPPERCASE' if to_upper else 'lowercase'}")
+                st.info(f" Text normalization applied: {'UPPERCASE' if to_upper else 'lowercase'}")
 
             # Embeddings
             try:
@@ -1103,9 +1103,9 @@ def main():
         embeddings = st.session_state["processed_embeddings"]
         out_col = st.session_state.get("output_text_column", "text")
 
-        st.success("✅ Embedding generation complete!")
+        st.success(" Embedding generation complete!")
         st.markdown("---")
-        st.subheader("🔎 Preview & Statistics")
+        st.subheader(" Preview & Statistics")
 
         # Stats row 1
         s1, s2, s3, s4 = st.columns(4)
@@ -1157,7 +1157,7 @@ def main():
         st.dataframe(pd.DataFrame(rows), use_container_width=True)
 
         # Downloads
-        st.subheader("💾 Download")
+        st.subheader(" Download")
         d1, d2, d3, d4 = st.columns(4)
 
         with d1:
@@ -1165,7 +1165,7 @@ def main():
             np.save(buf, embeddings)
             buf.seek(0)
             st.download_button(
-                "⬇️ Embeddings (.npy)", buf,
+                " Embeddings (.npy)", buf,
                 file_name="embeddings.npy", mime="application/octet-stream", key="dl_emb",
             )
 
@@ -1174,7 +1174,7 @@ def main():
             jb.write(json.dumps(all_chunks, ensure_ascii=False, indent=2).encode("utf-8"))
             jb.seek(0)
             st.download_button(
-                "⬇️ Chunks (.json)", jb,
+                " Chunks (.json)", jb,
                 file_name="chunks.json", mime="application/json", key="dl_json",
             )
 
@@ -1188,12 +1188,12 @@ def main():
                 zf.writestr("embeddings.npy", nb.read())
             zb.seek(0)
             st.download_button(
-                "📦 JSON + NPY (.zip)", zb,
+                " JSON + NPY (.zip)", zb,
                 file_name="chunks_and_embeddings.zip", mime="application/zip", key="dl_zip",
             )
 
         with d4:
-            if st.button("🧹 Clear Results"):
+            if st.button(" Clear Results"):
                 for k in (
                     "processed_chunks", "processed_embeddings", "results_ready",
                     "last_model_used", "embedding_model_id", "output_text_column",
@@ -1203,7 +1203,7 @@ def main():
 
         st.info(
             """
-💡 **Tips:**
+ **Tips:**
 - **NPY** contains the embedding vectors
 - **JSON** contains text chunks and metadata
 - **ZIP** bundles both files for convenience

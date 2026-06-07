@@ -67,9 +67,9 @@ A Turkish version of this guide is available in [README_tr.md](README_tr.md).
 
 Choose this if one or more of the following apply:
 - You selected "D (mixed format)" in question 6.
-- Documents are dynamic (2 → B) and you want the system to autonomously select tools (MCPs) based on the incoming file.
+- Documents are dynamic (2  B) and you want the system to autonomously select tools (MCPs) based on the incoming file.
 - You selected "B" in question 7 and need external system connections (database, API, CRM).
-- You need different output templates per scenario (5 → C).
+- You need different output templates per scenario (5  C).
 
 Approach: the LLM acts as an orchestrator, directing MCPs (reader, database, external tools) and deciding which tool to use per document and query.
 
@@ -79,10 +79,10 @@ Folder: [`/Agentic-RAG/README.md`](./Agentic-RAG/README.md)
 
 Choose this if:
 - Your document type is fixed (only HTML, only plain PDF, or only Excel).
-- Your data is static (2 → A) and rarely changes.
-- You do not need external connections (7 → A).
+- Your data is static (2  A) and rarely changes.
+- You do not need external connections (7  A).
 - You want a deterministic system with predictable behavior and minimal server/API cost.
-- Your GPU capacity is limited (1.1 → B) and you prefer lightweight models.
+- Your GPU capacity is limited (1.1  B) and you prefer lightweight models.
 
 Approach: the LLM only generates answers. All reading, parsing, and storage go through a fixed rule-based pipeline; the LLM has no autonomous decision authority.
 

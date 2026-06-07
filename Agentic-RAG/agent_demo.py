@@ -436,7 +436,7 @@ class AgenticRAGDemo:
 def _print_banner():
     print(f"""
 {_BOLD}{'=' * 60}
-  🤖 Agentic RAG Demo
+   Agentic RAG Demo
   Çoklu LLM + Otonom Araç Seçimi
 {'=' * 60}{_RESET}
 """)

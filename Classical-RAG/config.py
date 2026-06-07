@@ -36,7 +36,7 @@ EMBEDDING_MODELS = {
 }
 
 APP_CONFIG = {
-    "title": "📄 Document Chunking & Embedding",
+    "title": " Document Chunking & Embedding",
     "supported_formats": ["pdf", "docx", "txt", "csv", "xlsx", "xls"],
     "max_files": 20,
     "default_values": {

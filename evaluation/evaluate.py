@@ -121,7 +121,7 @@ def _compute_faithfulness(
             )
         claims: List[str] = json.loads(claims_raw)
         if not isinstance(claims, list) or len(claims) == 0:
-            return 1.0  # No claims to verify → faithful by default
+            return 1.0  # No claims to verify  faithful by default
     except (json.JSONDecodeError, Exception):
         logger.warning("Could not parse claims from LLM response; defaulting to 1.0")
         return 1.0
@@ -323,7 +323,7 @@ class RAGEvaluator:
         with open(out, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
-        print(f"\n✅ Results exported to {output_path}")
+        print(f"\n Results exported to {output_path}")
 
     @staticmethod
     def _print_report(report: EvaluationReport) -> None:
@@ -421,7 +421,7 @@ def main() -> None:
     print("=" * 60)
 
     # 1. Initialize pipeline
-    print("\n📦 Initializing pipeline...")
+    print("\n Initializing pipeline...")
     pipeline = ClassicalRAGPipeline(
         llm_provider=args.provider,
         model_name=args.model,
@@ -437,16 +437,16 @@ def main() -> None:
             if f.is_file() and f.suffix in (".txt", ".csv", ".pdf")
         ]
         if files:
-            print(f"\n📄 Ingesting {len(files)} file(s)...")
+            print(f"\n Ingesting {len(files)} file(s)...")
             count = pipeline.ingest(files)
-            print(f"   ✅ {count} chunks ingested")
+            print(f"    {count} chunks ingested")
         else:
-            print(f"\n⚠️  No supported files found in {data_dir}")
+            print(f"\n  No supported files found in {data_dir}")
     else:
-        print(f"\n⚠️  Data directory not found: {data_dir}")
+        print(f"\n  Data directory not found: {data_dir}")
 
     # 3. Run evaluation
-    print("\n🔍 Running evaluation...")
+    print("\n Running evaluation...")
     evaluator = RAGEvaluator(pipeline)
     report = evaluator.evaluate(args.qa_pairs)
 

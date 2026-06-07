@@ -590,7 +590,7 @@ class ClassicalRAGPipeline:
 
             self._store.upsert(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
             total += len(chunks)
-            logger.info("  → %d chunk kaydedildi (%s)", len(chunks), path.name)
+            logger.info("   %d chunk kaydedildi (%s)", len(chunks), path.name)
 
         logger.info("Toplam %d chunk kaydedildi.", total)
         return total
@@ -662,7 +662,7 @@ _DIM = "\033[2m"
 def _print_banner():
     print(f"""
 {_BOLD}{'=' * 60}
-  📚 Classical RAG Demo Pipeline
+   Classical RAG Demo Pipeline
   Çoklu LLM + Çoklu Vector Store
 {'=' * 60}{_RESET}
 """)
@@ -672,7 +672,7 @@ def _print_sources(sources: List[ChunkResult]):
     if not sources:
         return
     print(f"\n{_DIM}{'─' * 50}")
-    print(f"  📎 Kaynaklar ({len(sources)} chunk):")
+    print(f"   Kaynaklar ({len(sources)} chunk):")
     for i, src in enumerate(sources, 1):
         sf = src.metadata.get("source_file", "?")
         preview = src.text[:120].replace("\n", " ")
@@ -708,31 +708,31 @@ def main():
     _print_banner()
 
     try:
-        print(f"{_CYAN}🔧 Pipeline başlatılıyor (provider={args.provider}, store={args.vector_store})...{_RESET}")
+        print(f"{_CYAN} Pipeline başlatılıyor (provider={args.provider}, store={args.vector_store})...{_RESET}")
         pipeline = ClassicalRAGPipeline(
             llm_provider=args.provider, model_name=args.model,
             vector_store=args.vector_store, collection_name=args.collection,
         )
-        print(f"{_GREEN}✓ Pipeline hazır.{_RESET}\n")
+        print(f"{_GREEN} Pipeline hazır.{_RESET}\n")
     except (LLMConfigError, LLMConnectionError, VectorStoreError) as exc:
-        print(f"\n{_RED}❌ Hata: {exc}{_RESET}")
+        print(f"\n{_RED} Hata: {exc}{_RESET}")
         sys.exit(1)
 
     files = _collect_files(args.data_dir)
     if files:
-        print(f"{_CYAN}📂 {len(files)} dosya bulundu:{_RESET}")
+        print(f"{_CYAN} {len(files)} dosya bulundu:{_RESET}")
         for f in files:
             print(f"   • {Path(f).name}")
         try:
             n = pipeline.ingest(files)
-            print(f"{_GREEN}✓ {n} chunk kaydedildi.{_RESET}\n")
+            print(f"{_GREEN} {n} chunk kaydedildi.{_RESET}\n")
         except VectorStoreError as exc:
-            print(f"{_RED}❌ {exc}{_RESET}")
+            print(f"{_RED} {exc}{_RESET}")
             sys.exit(1)
     else:
-        print(f"{_YELLOW}⚠ Dosya bulunamadı: {args.data_dir}{_RESET}\n")
+        print(f"{_YELLOW} Dosya bulunamadı: {args.data_dir}{_RESET}\n")
 
-    print(f"{_BOLD}💬 Soru-Cevap (çıkmak için 'q'){_RESET}\n")
+    print(f"{_BOLD} Soru-Cevap (çıkmak için 'q'){_RESET}\n")
 
     try:
         while True:
@@ -747,14 +747,14 @@ def main():
             try:
                 resp = pipeline.query(question)
             except RAGPipelineError as exc:
-                print(f"{_RED}❌ {exc}{_RESET}\n")
+                print(f"{_RED} {exc}{_RESET}\n")
                 continue
             print(f"\n{_GREEN}{_BOLD}Cevap ({resp.provider}/{resp.model_used}):{_RESET}")
             print(resp.answer)
             _print_sources(resp.sources)
             print()
     except KeyboardInterrupt:
-        print(f"\n{_YELLOW}👋 Çıkılıyor...{_RESET}")
+        print(f"\n{_YELLOW} Çıkılıyor...{_RESET}")
 
     print(f"{_DIM}Demo tamamlandı.{_RESET}")
 

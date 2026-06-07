@@ -142,10 +142,10 @@ ratio is set to 10-20% of the chunk size.
 BÖLÜM 5 / SECTION 5: Classical RAG vs Agentic RAG
 --------------------------------------------------------------------------------
 
-Classical RAG, sabit bir pipeline izler: sorgu → arama → bağlam ekleme →
+Classical RAG, sabit bir pipeline izler: sorgu  arama  bağlam ekleme
 cevap üretme. Her adım önceden tanımlanmıştır ve sistem otonom karar vermez.
 
-Classical RAG follows a fixed pipeline: query → search → context augmentation →
+Classical RAG follows a fixed pipeline: query  search  context augmentation
 answer generation. Each step is predefined and the system does not make
 autonomous decisions.
 
